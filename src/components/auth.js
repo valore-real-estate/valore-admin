@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import '../styles/auth.css'
 
-function Auth() {
+function Auth({ onSuccess }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -30,7 +30,7 @@ function Auth() {
       }
 
       localStorage.setItem('valore_token', data.token || 'authenticated')
-      window.location.href = '/admin'
+      onSuccess()
     } catch (err) {
       setError('Server error. Please try again.')
       setLoading(false)

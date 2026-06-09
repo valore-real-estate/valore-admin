@@ -13,7 +13,7 @@ export default function Home() {
     setLoading(false)
   }, [])
 
-  if (loading) return null
+  if (loading) return <div style={{ background: '#f8f7f4', minHeight: '100vh' }} />
 
   return (
     <main>
