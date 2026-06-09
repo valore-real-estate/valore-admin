@@ -58,7 +58,7 @@ function LandPanel() {
       description: parse(p.description),
       price: p.price ?? '',
       area: p.area ?? '',
-      isAgricultural: p.isAgricultural ?? '',
+      isAgricultural: p.isAgricultural === true ? 'true' : p.isAgricultural === false ? 'false' : '',
     })
     setMainPhoto(null)
     setPhotos([])
