@@ -18,9 +18,20 @@ const parse = (val) => {
   try { return JSON.parse(val) } catch { return { geo: '', eng: '' } }
 }
 
+// Normalizes whatever shape the API returns into a plain array.
+// Handles: [...], { properties: [...] }, { data: [...] }, { results: [...] }, null/undefined, or error objects.
+const normalizeList = (data) => {
+  if (Array.isArray(data)) return data
+  if (data && Array.isArray(data.properties)) return data.properties
+  if (data && Array.isArray(data.data)) return data.data
+  if (data && Array.isArray(data.results)) return data.results
+  return []
+}
+
 function LandPanel() {
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(empty)
@@ -33,12 +44,19 @@ function LandPanel() {
 
   const fetchProperties = async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const res = await fetch(`${API}?type=land`)
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`)
       const data = await res.json()
-      setProperties(data)
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
+      setProperties(normalizeList(data))
+    } catch (e) {
+      console.error(e)
+      setLoadError('მიწის ჩატვირთვა ვერ მოხერხდა')
+      setProperties([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const openAdd = () => {
@@ -119,10 +137,12 @@ function LandPanel() {
     } catch (e) { alert('წაშლა ვერ მოხდა') }
   }
 
+  const list = Array.isArray(properties) ? properties : []
+
   return (
     <div>
       <div className="panel-header">
-        <div className="panel-title">მიწა <span>{properties.length} განცხადება</span></div>
+        <div className="panel-title">მიწა <span>{list.length} განცხადება</span></div>
         <button className="btn-add" onClick={openAdd}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -133,7 +153,12 @@ function LandPanel() {
 
       {loading ? (
         <div className="panel-loading"><div className="panel-spinner" /></div>
-      ) : properties.length === 0 ? (
+      ) : loadError ? (
+        <div className="empty-state">
+          <p>{loadError}</p>
+          <button className="btn-edit" onClick={fetchProperties} style={{marginTop: 12}}>თავიდან ცდა</button>
+        </div>
+      ) : list.length === 0 ? (
         <div className="empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>
@@ -142,7 +167,7 @@ function LandPanel() {
         </div>
       ) : (
         <div className="property-grid">
-          {properties.map(p => (
+          {list.map(p => (
             <div key={p._id} className="prop-card">
               {p.mainPhoto
                 ? <img src={p.mainPhoto} alt="" className="prop-card-img" />

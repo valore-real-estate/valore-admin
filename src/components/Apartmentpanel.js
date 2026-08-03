@@ -44,9 +44,29 @@ function ApartmentPanel() {
     try {
       const res = await fetch(`${API}?type=apartment`)
       const data = await res.json()
-      setProperties(data)
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
+
+      // API-ის პასუხის ფორმატის დამცავი შემოწმება:
+      // ზოგჯერ API პირდაპირ array-ს აბრუნებს, ზოგჯერ obj-ს wrapper-ით (data/properties/results)
+      let list = []
+      if (Array.isArray(data)) {
+        list = data
+      } else if (Array.isArray(data?.properties)) {
+        list = data.properties
+      } else if (Array.isArray(data?.data)) {
+        list = data.data
+      } else if (Array.isArray(data?.results)) {
+        list = data.results
+      } else {
+        console.warn('Unexpected API response shape:', data)
+      }
+
+      setProperties(list)
+    } catch (e) {
+      console.error(e)
+      setProperties([]) // შეცდომის შემთხვევაშიც ცარიელი array, არა undefined
+    } finally {
+      setLoading(false)
+    }
   }
 
   const openAdd = () => {
